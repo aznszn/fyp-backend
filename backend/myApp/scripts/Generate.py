@@ -40,7 +40,7 @@ def main(input_file, output_path, output_path_wav, length=30, start=0, melody_in
 
     history = ops.clip(events, 0, 5, clip_duration=False)
 
-    accompaniment = generate(model, 5, length, inputs=history, controls=melody, top_p=0.96, debug=False)
+    accompaniment = generate(model, 5, length, inputs=history, controls=melody, top_p=0.97, debug=False)
     # output = ops.clip(ops.combine(accompaniment, melody), 0, length, clip_duration=True)
     synthesize(output_path, output_path_wav, fs, accompaniment)
 

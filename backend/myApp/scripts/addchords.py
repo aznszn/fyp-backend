@@ -16,67 +16,26 @@ def arpeggiate(c, l):
     return arpeggio_notes
 
 def addDrums(start_offset, measure_duration, drums_stream, drums):
-    if(drums == 'half_time'):
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + measure_duration/2, hihat_note)
-        kick_note = note.Note()
-        kick_note.pitch.midi = 35
-        drums_stream.insert(start_offset + measure_duration/2, kick_note)
-        
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + measure_duration/8 + measure_duration/2, hihat_note)
+    if drums == 'half-time':
+        [drums_stream.insert(start_offset + (i * (measure_duration)), note.Note(midi=35)) for i in range(2)] #kick
 
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + measure_duration/4 + measure_duration/2, hihat_note)
-        snare_note = note.Note()
-        snare_note.pitch.midi = 38
-        drums_stream.insert(start_offset + measure_duration/4 + measure_duration/2, snare_note)
+        [drums_stream.insert(start_offset + measure_duration/2 + (i * (measure_duration)), note.Note(midi=38)) for i in range(1)]   #snare
         
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + 3*measure_duration/8 + measure_duration/2, hihat_note)
-        
-        
+        [drums_stream.insert(start_offset + (i * (measure_duration / 4)), note.Note(midi=42)) for i in range(5)] #hihat
 
+    elif drums == 'normal':
+        [drums_stream.insert(start_offset + (i * (measure_duration / 2)), note.Note(midi=35)) for i in range(3)]
 
-    
-    if drums == 'normal':    
-        kick_note = note.Note()
-        kick_note.pitch.midi = 35
-        drums_stream.insert(start_offset, kick_note)
+        [drums_stream.insert(start_offset + measure_duration/4 + (i * (measure_duration / 2)), note.Note(midi=38)) for i in range(2)]
         
-        kick_note = note.Note()
-        kick_note.pitch.midi = 35
-        drums_stream.insert(start_offset + measure_duration/2, kick_note)
+        [drums_stream.insert(start_offset + (i * (measure_duration / 8)), note.Note(midi=42)) for i in range(9)]
         
+    elif drums == 'double-time':
+        [drums_stream.insert(start_offset + (i * (measure_duration / 4)), note.Note(midi=35)) for i in range(5)]
 
-        snare_note = note.Note()
-        snare_note.pitch.midi = 38
-        drums_stream.insert(start_offset + measure_duration/8, snare_note)
+        [drums_stream.insert(start_offset + measure_duration/8 + (i * (measure_duration / 4)), note.Note(midi=38)) for i in range(4)]
         
-        snare_note = note.Note()
-        snare_note.pitch.midi = 38
-        drums_stream.insert(start_offset + measure_duration/4, snare_note)
-
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset, hihat_note)
-    
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + measure_duration/8, hihat_note)
-    
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + measure_duration/4, hihat_note)
-
-        hihat_note = note.Note()
-        hihat_note.pitch.midi = 42
-        drums_stream.insert(start_offset + measure_duration/2, hihat_note)
-        
+        [drums_stream.insert(start_offset + (i * (measure_duration / 16)), note.Note(midi=42)) for i in range(17)]
     
     return drums_stream
 
@@ -109,19 +68,14 @@ def addChords(measure, k, chords_stream, key_scale, start_offset, measure_durati
         i = key_scale.getScaleDegreeAndAccidentalFromPitch(closest_note_pitch)[0] - 1
         # i = 0
 
-        root_pitch = key_scale.pitches[i]
-        third_pitch = key_scale.pitches[(i + 2) % (7)]
-        fifth_pitch = key_scale.pitches[(i + 4) % (7)]
-        seventh_pitch = key_scale.pitches[(i + 6) % (7)]
+        # root_pitch = key_scale.pitches[i]
+        # third_pitch = key_scale.pitches[(i + 2) % (7)]
+        # fifth_pitch = key_scale.pitches[(i + 4) % (7)]
+        # seventh_pitch = key_scale.pitches[(i + 6) % (7)]
     
-        measure_chord = chord.Chord([root_pitch, third_pitch, fifth_pitch, seventh_pitch])
+        measure_chord = chord.Chord([key_scale.pitches[(i + j) % 7] for j in [0, 2, 4, 6]])
     
         print(measure_chord.pitchedCommonName)
-
-        # arpeggio_notes = arpeggiate(measure_chord, measure_duration)
-        # print(arpeggio_notes)
-        # for i in range(len(arpeggio_notes)):
-        #     chords_stream.insert(start_offset + i*measure_duration/4, arpeggio_notes[i])
     
         chords_stream.insert(start_offset + measure_duration/2, measure_chord)
         chords_stream[-1].quarterLength = measure_duration
@@ -184,21 +138,11 @@ def output(file_name, output_path, score, chords_stream, drums_stream):
     drum_track = midi.translate.streamHierarchyToMidiTracks(drums_stream)[1]
     drum_track.setChannel(10)
     mf.tracks.append(drum_track)
-    mf.open(output_path + "_complete.mid", 'wb')
+    mf.open(os.path.join(output_path, file_name + "_complete.mid"),'wb')
     mf.write()
     mf.close()
 
 def main(input_file_path, file_name, output_path, drums, piano):
-    # if args.drums:
-    #     print(f"Selected drums: {args.drums}")
-
-    # if args.piano is not None:
-    #     print(f"Piano included: {args.piano}")
-
-    # if args.input_file_path:
-    #     print(f"File path provided: {args.input_file_path}")
-
-    # Load MIDI file or music score file
     score = converter.parse(input_file_path)
 
     ts = None
@@ -222,13 +166,3 @@ def main(input_file_path, file_name, output_path, drums, piano):
     setAttributes(chords_stream, drums_stream)
     
     output(file_name, output_path, score, chords_stream, drums_stream)
-    
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description='Process some musical options.')
-    
-#     parser.add_argument('--drums', choices=[None, 'half_time', 'double_time', 'normal'], help='Select drum type')
-#     parser.add_argument('--piano', type=bool, help='Include piano (True/False)')
-#     parser.add_argument('--file_path', help='File path')
-
-#     args = parser.parse_args()
-#     main(args)

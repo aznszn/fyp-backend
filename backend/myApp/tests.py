@@ -1,4 +1,4 @@
 from django.test import TestCase
 from scripts import accompaniment
 
-accompaniment.main("../inputs/melody.wav", length=10)
+accompaniment.main("atifcropped.wav", length=30)

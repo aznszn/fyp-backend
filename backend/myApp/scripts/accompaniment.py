@@ -68,29 +68,37 @@ def main(input_file_name, drums='normal', piano=True, length=30):
     #setting paths
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     input_file_path = os.path.join(curr_dir,"../", "inputs", input_file_name)
+    file_base_name = str(os.path.splitext(os.path.basename(input_file_path))[0])
     
     vocals_dir = os.path.join(curr_dir, "vocalsSeparated")
-    midi_vox_dir = os.path.join(curr_dir, "vox_midi")
-    midi_output_dir = os.path.join(curr_dir, "midi_output")
-    generated_output_dir = os.path.join(curr_dir, "generated")
+    separated_vox_file_path = os.path.join(vocals_dir, file_base_name + "_vox.wav")
     
-    file_base_name = str(os.path.splitext(os.path.basename(input_file_path))[0])
+    midi_vox_dir = os.path.join(curr_dir, "vox_midi")
+    vox_midi_file_path = os.path.join(midi_vox_dir, file_base_name + "_vox_basic_pitch.mid")
+    
+    midi_output_dir = os.path.join(curr_dir, "midi_output")
+    midi_output_file_path = os.path.join(midi_output_dir, file_base_name + "_complete.mid")
+    
+    generated_output_dir = os.path.join(curr_dir, "generated")
+    generated_output_file_path = os.path.join(generated_output_dir, file_base_name+"_generated.mid")
+    
+    
     
     
     separator = demucs.api.Separator(progress=True)
     _, separated = separator.separate_audio_file(input_file_path)
-    separated_vox_file_path = os.path.join(vocals_dir, file_base_name + "_vox.wav")
-    print(separated_vox_file_path)
+    
+
     demucs.api.save_audio(separated["vocals"], separated_vox_file_path, samplerate=separator.samplerate)
     
     
     basic_pitch_command = f'basic-pitch {midi_vox_dir} {separated_vox_file_path}'
     sp.run(basic_pitch_command, shell=True, check=True)
-    vox_midi_file_path = os.path.join(midi_vox_dir, file_base_name + "_vox_basic_pitch.mid")
+
 
     addchords.main(vox_midi_file_path, file_base_name, midi_output_dir, drums, piano)
     
-    midi_output_file_path = os.path.join(midi_output_dir, file_base_name + "_complete.mid")
+
 
     Generate.main(midi_output_file_path,
                   os.path.join(generated_output_dir, file_base_name + "_generated.mid"),
