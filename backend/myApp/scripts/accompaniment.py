@@ -65,7 +65,6 @@ import Generate
 #         print("Command failed, something went wrong.")
 
 def main(input_file_name, drums='normal', piano=True, length=30):
-    #setting paths
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     input_file_path = os.path.join(curr_dir,"../", "inputs", input_file_name)
     file_base_name = str(os.path.splitext(os.path.basename(input_file_path))[0])
@@ -80,30 +79,29 @@ def main(input_file_name, drums='normal', piano=True, length=30):
     midi_output_file_path = os.path.join(midi_output_dir, file_base_name + "_complete.mid")
     
     generated_output_dir = os.path.join(curr_dir, "generated")
-    generated_output_file_path = os.path.join(generated_output_dir, file_base_name+"_generated.mid")
+    generated_midi_output_file_path = os.path.join(generated_output_dir, file_base_name+"_generated.mid")
+    generated_output_file_path = os.path.join(generated_output_dir, file_base_name+"_generated.wav")
     
     
-    
+    final_output_file_path = os.path.join(curr_dir, "../","outputs", file_base_name + ".wav")
     
     separator = demucs.api.Separator(progress=True)
     _, separated = separator.separate_audio_file(input_file_path)
-    
 
     demucs.api.save_audio(separated["vocals"], separated_vox_file_path, samplerate=separator.samplerate)
-    
     
     basic_pitch_command = f'basic-pitch {midi_vox_dir} {separated_vox_file_path}'
     sp.run(basic_pitch_command, shell=True, check=True)
 
-
     addchords.main(vox_midi_file_path, file_base_name, midi_output_dir, drums, piano)
-    
-
 
     Generate.main(midi_output_file_path,
                   os.path.join(generated_output_dir, file_base_name + "_generated.mid"),
                   os.path.join(generated_output_dir, file_base_name + "_generated.wav"),
                   length)
+    
+    merge_command = "ffmpeg -i " + generated_output_file_path + " -i " + separated_vox_file_path + " -filter_complex amix=inputs=2:duration=shortest -y " + final_output_file_path
+    sp.run(merge_command, shell=True, check=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some musical options.')

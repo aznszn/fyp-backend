@@ -60,25 +60,27 @@ def findClosestNote(measure, k):
 
 def addChords(measure, k, chords_stream, key_scale, start_offset, measure_duration):
     closest_note_obj, closest_note_pitch = findClosestNote(measure, k)
-
+    
     scale_notes = [n.name for n in key_scale.getPitches()]
-    relative_scale_notes = [n.name for n in key_scale.getPitches()]
 
     if closest_note_obj.name in scale_notes:
         i = key_scale.getScaleDegreeAndAccidentalFromPitch(closest_note_pitch)[0] - 1
-        # i = 0
-
-        # root_pitch = key_scale.pitches[i]
-        # third_pitch = key_scale.pitches[(i + 2) % (7)]
-        # fifth_pitch = key_scale.pitches[(i + 4) % (7)]
-        # seventh_pitch = key_scale.pitches[(i + 6) % (7)]
     
         measure_chord = chord.Chord([key_scale.pitches[(i + j) % 7] for j in [0, 2, 4, 6]])
     
         print(measure_chord.pitchedCommonName)
     
-        chords_stream.insert(start_offset + measure_duration/2, measure_chord)
-        chords_stream[-1].quarterLength = measure_duration
+        chords_stream.insert(start_offset, measure_chord)
+        chords_stream[-1].quarterLength = measure_duration/2
+    else:
+        i = 0
+    
+        measure_chord = chord.Chord([key_scale.pitches[(i + j) % 7] for j in [0, 2, 4, 6]])
+    
+        print(measure_chord.pitchedCommonName)
+    
+        chords_stream.insert(start_offset, measure_chord)
+        chords_stream[-1].quarterLength = measure_duration/2
     
     return chords_stream
 
@@ -148,7 +150,7 @@ def main(input_file_path, file_name, output_path, drums, piano):
     ts = None
     tempo_ = None
 
-    for el in score.flat:
+    for el in score.flatten():
         if isinstance(el, meter.TimeSignature):
             ts = el.ratioString
         elif isinstance(el, tempo.MetronomeMark):
