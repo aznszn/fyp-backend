@@ -14,6 +14,7 @@ from shutil import rmtree
 from typing import Dict, Tuple, Optional, IO
 import addchords
 import Generate
+import demucs.separate
 
 
 # def copy_process_streams(process: sp.Popen):
@@ -69,11 +70,11 @@ def main(input_file_name, drums='normal', piano=True, length=30):
     input_file_path = os.path.join(curr_dir,"../", "inputs", input_file_name)
     file_base_name = str(os.path.splitext(os.path.basename(input_file_path))[0])
     
-    vocals_dir = os.path.join(curr_dir, "vocalsSeparated")
-    separated_vox_file_path = os.path.join(vocals_dir, file_base_name + "_vox.wav")
+    separated_dir = os.path.join(curr_dir, "separated")
+    separated_vocals_file_path = os.path.join(separated_dir, "htdemucs", file_base_name + "_vocals.wav")
     
     midi_vox_dir = os.path.join(curr_dir, "vox_midi")
-    vox_midi_file_path = os.path.join(midi_vox_dir, file_base_name + "_vox_basic_pitch.mid")
+    vox_midi_file_path = os.path.join(midi_vox_dir, file_base_name + "_vocals_basic_pitch.mid")
     
     midi_output_dir = os.path.join(curr_dir, "midi_output")
     midi_output_file_path = os.path.join(midi_output_dir, file_base_name + "_complete.mid")
@@ -85,12 +86,9 @@ def main(input_file_name, drums='normal', piano=True, length=30):
     
     final_output_file_path = os.path.join(curr_dir, "../","outputs", file_base_name + ".wav")
     
-    separator = demucs.api.Separator(progress=True)
-    _, separated = separator.separate_audio_file(input_file_path)
-
-    demucs.api.save_audio(separated["vocals"], separated_vox_file_path, samplerate=separator.samplerate)
+    demucs.separate.main(["--two-stems", "vocals", "-o", separated_dir, "--filename", "{track}_{stem}.{ext}", input_file_path])
     
-    basic_pitch_command = f'basic-pitch {midi_vox_dir} {separated_vox_file_path}'
+    basic_pitch_command = f'basic-pitch {midi_vox_dir} {separated_vocals_file_path}'
     sp.run(basic_pitch_command, shell=True, check=True)
 
     addchords.main(vox_midi_file_path, file_base_name, midi_output_dir, drums, piano)
@@ -100,7 +98,7 @@ def main(input_file_name, drums='normal', piano=True, length=30):
                   os.path.join(generated_output_dir, file_base_name + "_generated.wav"),
                   length)
     
-    merge_command = "ffmpeg -i " + generated_output_file_path + " -i " + separated_vox_file_path + " -filter_complex amix=inputs=2:duration=shortest -y " + final_output_file_path
+    merge_command = "ffmpeg -i " + generated_output_file_path + " -i " + separated_vocals_file_path + " -filter_complex amix=inputs=2:duration=shortest -y " + final_output_file_path
     sp.run(merge_command, shell=True, check=True)
 
 if __name__ == "__main__":
