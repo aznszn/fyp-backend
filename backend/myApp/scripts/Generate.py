@@ -23,7 +23,7 @@ def main(input_file, output_path, output_path_wav, length=30, start=0, melody_in
     MEDIUM_MODEL = 'stanford-crfm/music-medium-800k'   # slower inference, better sample quality
 
 # load an anticipatory music transformer
-    model = AutoModelForCausalLM.from_pretrained(SMALL_MODEL).cuda()
+    model = AutoModelForCausalLM.from_pretrained(MEDIUM_MODEL).cuda()
 
 # a MIDI synthesizer
     fs = midi2audio.FluidSynth('/usr/share/sounds/sf2/FluidR3_GM.sf2')

@@ -21,5 +21,6 @@ from myApp import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/home/', views.helloWorld, name='helloWorld'),
-    path('api/melodyGenerate/', views.melodyGenerate, name='melodyGenerate')
+    path('api/accompanimentGenerate/', views.accompanimentGenerate, name='accompanimentGenerate'),
+    path('api/sourceSeparate/', views.sourceSeparate, name='sourceSeparate'),
 ]

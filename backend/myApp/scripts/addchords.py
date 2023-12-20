@@ -88,7 +88,7 @@ def addChords(measure, k, chords_stream, key_scale, start_offset, measure_durati
 def addInstruments(score, drums, piano, num_measures):
     # Find key
     k = score.analyze('key')
-
+    print(k)
     if(k.mode == "major"):
         key_scale = scale.MajorScale(k.tonic)
     else:
