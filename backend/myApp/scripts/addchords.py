@@ -58,34 +58,43 @@ def findClosestNote(measure, k):
 
     return closest_note_obj, closest_note_pitch
 
-def addChords(measure, k, chords_stream, key_scale, start_offset, measure_duration):
+def addChords(measure, k, chords_stream, bass_stream, bass, drums, key_scale, start_offset, measure_duration):
     closest_note_obj, closest_note_pitch = findClosestNote(measure, k)
     
     scale_notes = [n.name for n in key_scale.getPitches()]
 
-    if closest_note_obj.name in scale_notes:
-        i = key_scale.getScaleDegreeAndAccidentalFromPitch(closest_note_pitch)[0] - 1
+    i = 0 if closest_note_obj.name not in scale_notes else key_scale.getScaleDegreeAndAccidentalFromPitch(closest_note_pitch)[0] - 1
+
+    measure_chord = chord.Chord([key_scale.pitches[(i + j) % 7] for j in [0, 2, 4]])
+
+    print(measure_chord.pitchedCommonName)
+
+    chords_stream.insert(start_offset, measure_chord)
+    chords_stream[-1].quarterLength = measure_duration/2
     
-        measure_chord = chord.Chord([key_scale.pitches[(i + j) % 7] for j in [0, 2, 4, 6]])
-    
-        print(measure_chord.pitchedCommonName)
-    
-        chords_stream.insert(start_offset, measure_chord)
-        chords_stream[-1].quarterLength = measure_duration/2
-    else:
-        i = 0
-    
-        measure_chord = chord.Chord([key_scale.pitches[(i + j) % 7] for j in [0, 2, 4, 6]])
-    
-        print(measure_chord.pitchedCommonName)
-    
-        chords_stream.insert(start_offset, measure_chord)
-        chords_stream[-1].quarterLength = measure_duration/2
-    
+    if bass is True:
+        bass_stream.insert(0, note.Note(scale_notes[i] + "2"))
+        bass_stream[-1].quarterLength = measure_duration/2
+            
+    if drums is not None:
+        if drums == 'normal':
+            bass_stream.insert(measure_duration/2, note.Note(scale_notes[0] + "2"))
+            bass_stream[-1].quarterLength = measure_duration/2
+            
+        elif drums == 'double-time':
+            bass_stream.insert(measure_duration/4, note.Note(scale_notes[0] + "2"))
+            bass_stream[-1].quarterLength = measure_duration/4
+            
+            bass_stream.insert(measure_duration/2, note.Note(scale_notes[0] + "2"))
+            bass_stream[-1].quarterLength = measure_duration/4
+            
+            bass_stream.insert(measure_duration*3/4, note.Note(scale_notes[0] + "2"))
+            bass_stream[-1].quarterLength = measure_duration/4
+            
     return chords_stream
 
 
-def addInstruments(score, drums, piano, num_measures):
+def addInstruments(score, drums, bass, piano, num_measures):
     # Find key
     k = score.analyze('key')
     print(k)
@@ -100,6 +109,9 @@ def addInstruments(score, drums, piano, num_measures):
     drums_stream = stream.Stream()
     drums_stream.insert(0, instrument.BassDrum())
     
+    bass_stream = stream.Stream()
+    bass_stream.insert(0, instrument.ElectricBass())
+    
     parts = score.parts if hasattr(score, 'parts') else [score]
     
     for part in parts:
@@ -112,8 +124,8 @@ def addInstruments(score, drums, piano, num_measures):
             if drums is not None:
                 drums_stream = addDrums(start_offset, measure_duration, drums_stream, drums)
 
-            if piano is not None:
-                chords_stream = addChords(measure, k, chords_stream, key_scale, start_offset, measure_duration)
+            if piano is True:
+                chords_stream = addChords(measure, k, chords_stream, bass_stream, bass, drums, key_scale, start_offset, measure_duration)
             
     
     return chords_stream, drums_stream
@@ -144,27 +156,27 @@ def output(file_name, output_path, score, chords_stream, drums_stream):
     mf.write()
     mf.close()
 
-def main(input_file_path, file_name, output_path, drums, piano):
+def main(input_file_path, file_name, output_path, drums, piano, bass=True):
     score = converter.parse(input_file_path)
 
-    ts = None
-    tempo_ = None
+    # ts = None
+    # tempo_ = None
 
-    for el in score.flatten():
-        if isinstance(el, meter.TimeSignature):
-            ts = el.ratioString
-        elif isinstance(el, tempo.MetronomeMark):
-            tempo_ = el.getQuarterBPM()
+    # for el in score.flatten():
+    #     if isinstance(el, meter.TimeSignature):
+    #         ts = el.ratioString
+    #     elif isinstance(el, tempo.MetronomeMark):
+    #         tempo_ = el.getQuarterBPM()
 
-    if ts is not None and tempo_ is not None:
-        beats_per_measure = int(ts.split('/')[0])  # Get beats per measure from the time signature
-        seconds_per_minute = 60.0  # Seconds per minute
+    # if ts is not None and tempo_ is not None:
+    #     beats_per_measure = int(ts.split('/')[0])  # Get beats per measure from the time signature
+    #     seconds_per_minute = 60.0  # Seconds per minute
 
-        duration_of_measure = (seconds_per_minute / tempo_) * beats_per_measure
+    #     duration_of_measure = (seconds_per_minute / tempo_) * beats_per_measure
 
-    num_measures = ceil(5.0/duration_of_measure)
-
-    chords_stream, drums_stream = addInstruments(score, drums, piano, num_measures)
+    # num_measures = ceil(5.0/duration_of_measure)
+    num_measures = 1
+    chords_stream, drums_stream = addInstruments(score, drums, piano, bass,  num_measures)
     setAttributes(chords_stream, drums_stream)
     
     output(file_name, output_path, score, chords_stream, drums_stream)

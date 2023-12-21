@@ -18,7 +18,7 @@ def synthesize(file_path, file_path_wav, fs, tokens):
     fs.midi_to_audio(file_path, file_path_wav)
     return file_path_wav
 
-def main(input_file, output_path, output_path_wav, length=30, start=0, melody_instrument=4):
+def main(input_file, output_path, output_path_wav, length=30, start=0, melody_instrument=4, history_length=1):
     SMALL_MODEL = 'stanford-crfm/music-small-800k'     # faster inference, worse sample quality
     MEDIUM_MODEL = 'stanford-crfm/music-medium-800k'   # slower inference, better sample quality
 
@@ -32,15 +32,16 @@ def main(input_file, output_path, output_path_wav, length=30, start=0, melody_in
 
     melody_instrument = 4
 
+    
     segment = ops.clip(events, start, start + length)
     segment = ops.translate(segment, -ops.min_time(segment, seconds=False))
 
     print(ops.get_instruments(segment).keys())
     events, melody = extract_instruments(segment, [melody_instrument])
 
-    history = ops.clip(events, 0, 5, clip_duration=False)
+    history = ops.clip(events, 0, history_length, clip_duration=False)
 
-    accompaniment = generate(model, 5, length, inputs=history, controls=melody, top_p=0.95, debug=False)
+    accompaniment = generate(model, history_length, length, inputs=history, controls=melody, top_p=0.95, debug=False)
     # output = ops.clip(ops.combine(accompaniment, melody), 0, length, clip_duration=True)
     synthesize(output_path, output_path_wav, fs, accompaniment)
 

@@ -55,7 +55,7 @@ def main(input_file_name, drums='normal', piano=True, length=30):
                   os.path.join(generated_output_dir, file_base_name + "_generated.mid"),
                   os.path.join(generated_output_dir, file_base_name + "_generated.wav"),
                   length)
-
+    print("Generation done, rendering...")
     merge_command = "ffmpeg -i " + generated_output_file_path + " -i " + separated_vocals_file_path + " -filter_complex amix=inputs=2:duration=shortest -y " + final_output_file_path
     (AudioSegment.from_file(generated_output_file_path) + 13).overlay(AudioSegment.from_file(separated_vocals_file_path)).export(final_output_file_path, format="wav")
     # sp.run(merge_command, shell=True, check=True)
